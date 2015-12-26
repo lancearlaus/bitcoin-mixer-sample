@@ -1,4 +1,4 @@
-name := "gemini-challenge"
+name := "bitcoin-mixer-sample"
 
 organization := "com.lancearlaus"
 
@@ -19,7 +19,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit-experimental"     % "2.0-M2"   % "test"
 )
 
-homepage := Some(url("https://github.com/lancearlaus/gemini-challenge"))
+homepage := Some(url("https://github.com/lancearlaus/bitcoin-mixer-sample"))
 
 licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 

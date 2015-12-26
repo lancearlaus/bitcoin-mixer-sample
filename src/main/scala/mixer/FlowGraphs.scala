@@ -2,14 +2,17 @@ package mixer
 
 import akka.actor.{ActorSystem, Cancellable}
 import akka.agent.Agent
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.{HttpRequest, Uri}
+import akka.http.scaladsl.model.{HttpRequest, RequestEntity, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl._
 import akka.stream.{ClosedShape, Materializer}
-import stream.rate.{DelayStage2, Poisson, Rate}
+import stream.rate.{DelayStage, Poisson, Rate}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -22,7 +25,7 @@ object FlowGraphs extends JsonProtocol {
    * The mixer consumes the transaction log and calculates and posts the necessary transfers to execute the mix
    * according to the provided specification.
    *
-   * The graph materializes two values.
+   * The graph materializes a reference to the mixer which contains two values:
    * A Cancellable that can be used to cancel the transaction source, thus terminating the mixer.
    * An Agent that can be used to obtain the latest mix state to provide external visibility, e.g. via an HTTP route.
    *
@@ -34,9 +37,9 @@ object FlowGraphs extends JsonProtocol {
   def mixerGraph(
     specification: MixSpecification,
     transactions: Source[List[Transaction], Cancellable],
-    delay: Flow[Transfer, Transfer, _],
-    post: Sink[Transfer, _]
-  )(implicit materializer: Materializer, system: ActorSystem): RunnableGraph[(Cancellable, Agent[MixState])] = {
+    delay: Flow[TransactionRequest, TransactionRequest, _],
+    post: Sink[TransactionRequest, _]
+  )(implicit materializer: Materializer, system: ActorSystem): RunnableGraph[MixerReference] = {
 
     implicit val executionContext = materializer.executionContext
 
@@ -44,12 +47,12 @@ object FlowGraphs extends JsonProtocol {
       transactions,
       tail,
       mix(specification),
-      Unzip[MixState, List[Transfer]],
+      Unzip[MixState, List[TransactionRequest]],
       agent(Agent(MixState(specification))),
       transfers,
       delay,
       post
-    )((cancellable, _, _, _, agent, _, _, _) => (cancellable, agent)) {
+    )((cancellable, _, _, _, agent, _, _, _) => MixerReference(cancellable, agent)) {
       implicit b => (transactions, tail, mix, unzip, agent, transfers, delay, post) =>
         import FlowGraph.Implicits._
 
@@ -106,11 +109,11 @@ object FlowGraphs extends JsonProtocol {
    * @param spec mix specification used to calculate mix transfers
    * @return
    */
-  def mix(spec: MixSpecification): Flow[List[Transaction], (MixState, List[Transfer]), Unit] = {
+  def mix(spec: MixSpecification): Flow[List[Transaction], (MixState, List[TransactionRequest]), Unit] = {
     Flow[List[Transaction]].prefixAndTail(1).map { case (prefix, tail) =>
         val prefixState = (MixState(spec) ++ prefix(0))._1
         val prefixSource = Source.single((prefixState, prefixState.oustanding))
-        val tailSource = tail.scan((prefixState, List.empty[Transfer]))(_._1 ++ _).drop(1)
+        val tailSource = tail.scan((prefixState, List.empty[TransactionRequest]))(_._1 ++ _).drop(1)
         prefixSource ++ tailSource
     }.flatMapConcat(identity)
   }
@@ -125,13 +128,34 @@ object FlowGraphs extends JsonProtocol {
   /**
    * Flattens transfer batches into a single stream of transfers.
    */
-  val transfers = Flow[List[Transfer]]
+  val transfers = Flow[List[TransactionRequest]]
     .flatMapConcat(trs => Source(trs))
 
   /**
    * Pass-through flow that delays emitting elements according to a Poisson distribution
    * with the specified mean arrival rate.
    */
-  def poissonDelay[A](rate: Rate): Flow[A, A, _] = Flow[A].via(DelayStage2[A](Poisson.arrivalTimes(rate)))
+  def poissonDelay[A](rate: Rate): Flow[A, A, _] = Flow[A].via(DelayStage[A](Poisson.arrivalTimes(rate)))
+
+  /**
+   * Posts transactions requests.
+   */
+  def postTransaction(uri: Uri)(implicit materializer: Materializer, system: ActorSystem, log: LoggingAdapter): Sink[TransactionRequest, _] = {
+    implicit val executionContext = materializer.executionContext
+
+    Sink.foreach[TransactionRequest] { req =>
+      log.info(s"Posting transaction request (req: $req, uri: $uri)")
+      for {
+        requestEntity <- Marshal(req).to[RequestEntity]
+        response <- Http().singleRequest(HttpRequest(method = POST, uri = uri, entity = requestEntity))
+      } response.status match {
+          case OK => log.info(s"Successfully posted transaction $req")
+          case _ => for {
+            errRes <- Unmarshal(response.entity).to[ErrorResponse]
+            message <- errRes.error
+          } log.error(s"Error posting transaction (req: $req, error: $message)")
+      }
+    }
+  }
 
 }

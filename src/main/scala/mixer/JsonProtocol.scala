@@ -33,8 +33,23 @@ trait JsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
     }
   }
 
-  implicit val transactionFormat = jsonFormat4(Transaction)
-  implicit val transferFormat = jsonFormat3(Transfer.apply)
+  implicit val successResponseFormat = jsonFormat1(SuccessResponse)
+  implicit val errorResponseFormat = jsonFormat1(ErrorResponse)
+  implicit val addressRequestFormat = jsonFormat2(FundingRequest)
+  implicit val transactionFormat = jsonFormat4(Transaction.apply)
+  implicit val transactionRequestFormat = jsonFormat3(TransactionRequest.apply)
+  implicit val mixSpecificationFormat = jsonFormat4(MixSpecification)
+  implicit val mixRequestFormat = jsonFormat1(MixRequest)
+  implicit val accountFormat = jsonFormat3(Account.apply)
+  implicit val mixBalancesFormat = jsonFormat(MixBalances.apply, "in", "mix", "out")
+  implicit val mixStateFormat = jsonFormat(MixState.apply, "balances", "increment", "transfers", "transactions")
+
+  implicit object AddressDetailWriter extends RootJsonWriter[AddressDetail] {
+    override def write(detail: AddressDetail): JsValue = JsObject(
+      "balance" -> detail.balance.toJson,
+      "transactions" -> detail.transactions.toJson
+    )
+  }
 
 }
 

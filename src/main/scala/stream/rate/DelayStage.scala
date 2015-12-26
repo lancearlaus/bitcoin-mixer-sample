@@ -20,7 +20,7 @@ import scala.concurrent.duration.FiniteDuration
  *
  * @param delays desired inter-event timings
  */
-case class DelayStage2[A](delays: Iterator[FiniteDuration]) extends GraphStage[FlowShape[A, A]] {
+case class DelayStage[A](delays: Iterator[FiniteDuration]) extends GraphStage[FlowShape[A, A]] {
 
   val in = Inlet[A]("DelayStage.in")
   val out = Outlet[A]("DelayStage.out")
