@@ -41,7 +41,7 @@ trait HttpServer {
   protected implicit val executor: ExecutionContextExecutor = system.dispatcher
   protected implicit val materializer: Materializer = ActorMaterializer()
 
-  protected val config = ConfigFactory.load()
+  protected val config = ConfigFactory.load().resolve()
 
   def interface = config.getString("http.server.interface")
   def port      = config.getInt("http.server.port")

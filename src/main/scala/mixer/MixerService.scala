@@ -37,6 +37,7 @@ trait MixerService extends HttpService with JsonProtocol {
     } ~
     (post & path("mixers")) {
       entity(as[MixRequest]) { req =>
+        log.info(s"Received mix creation request: $req")
         // Create and run a new mixer for the given specification
         complete(runMixer(MixSpecification(inAddress(), mixAddress, req.out, mixIncrement)))
       }

@@ -1,5 +1,6 @@
 package mixer
 
+import akka.event.Logging
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
@@ -11,6 +12,7 @@ import scala.collection.mutable
 
 trait JobcoinService extends HttpService with JsonProtocol {
 
+  private lazy val log = Logging(system, classOf[MixerService])
   val transactions = mutable.ListBuffer[Transaction]()
   val addresses = mutable.Map[Address, AddressDetail]().withDefault(a => AddressDetail(a))
   def initial: Map[Address, Amount] = config.getObject("jobcoin.initial").asScala.map { case (k, v) =>
@@ -24,6 +26,7 @@ trait JobcoinService extends HttpService with JsonProtocol {
     pathPrefix("api") {
       (post & path("transactions")) {
         entity(as[TransactionRequest]) { tx =>
+          log.info(s"Received transaction request: $tx")
           complete(postTransaction(tx))
         }
       } ~

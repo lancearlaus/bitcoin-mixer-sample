@@ -13,6 +13,7 @@ object Main extends App
     val port = binding.localAddress.getPort
 
     // curl -H "Content-Type: application/json" --data '{ "out": [ "AliceOut1", "AliceOut2" ] }' http://localhost:8080/mixers
+    // url -H "Content-Type: application/json" --data '{ "fromAddress": "Alice"; "toAddress": "mixIn0"; "amount": "10" }' http://localhost:8080/api/transactions
 
     println(
       s"""

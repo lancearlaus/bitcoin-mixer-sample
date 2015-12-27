@@ -39,7 +39,7 @@ object FlowGraphs extends JsonProtocol {
     transactions: Source[List[Transaction], Cancellable],
     delay: Flow[TransactionRequest, TransactionRequest, _],
     post: Sink[TransactionRequest, _]
-  )(implicit materializer: Materializer, system: ActorSystem): RunnableGraph[MixerReference] = {
+  )(implicit materializer: Materializer, system: ActorSystem, log: LoggingAdapter): RunnableGraph[MixerReference] = {
 
     implicit val executionContext = materializer.executionContext
 
@@ -70,13 +70,23 @@ object FlowGraphs extends JsonProtocol {
    * @param period polling period
    * @return
    */
-  def transactions(uri: Uri, period: FiniteDuration)(implicit materializer: Materializer, system: ActorSystem): Source[List[Transaction], Cancellable] = {
+  def transactions(uri: Uri, period: FiniteDuration)(implicit materializer: Materializer, system: ActorSystem, log: LoggingAdapter): Source[List[Transaction], Cancellable] = {
     implicit val executionContext = materializer.executionContext
     Source.tick(Duration.Zero, period, ()).map { tick =>
+      log.info(s"Sending transactions request...")
       Http().singleRequest(HttpRequest(uri = uri)).flatMap { response =>
+        log.info(s"Received transactions response")
         response.status match {
           case OK => Unmarshal(response.entity).to[List[Transaction]]
-          case _ => Future.successful(List.empty[Transaction])
+          case s => {
+            log.error(s"Unexpected response status $s")
+            Future.successful(List.empty[Transaction])
+          }
+        }
+      } recover {
+        case t: Throwable => {
+          log.error(t, "Error retrieving transactions")
+          List.empty[Transaction]
         }
       }
     }.flatMapConcat(txs => Source(txs))
