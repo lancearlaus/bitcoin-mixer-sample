@@ -32,11 +32,12 @@ Get started with the following URLs:
 * The mixer implementation is an event sourced inspired design, treating the Jobcoing transaction list as an append-only log over which
    a set of aggregates are calculated to generate the current mix state and any necessary transactions
 * Each mixer instance is implemented using a materialized flow with the following structure
-  ```scala
+
+    ```scala
         transactions ~> tail ~> mix ~> unzip.in
                                        unzip.out0 ~> agent
                                        unzip.out1 ~> transfers ~> delay ~> post
-  ```
+    ```
     * transactions - periodically polls the Jobcoin transactions endpoint, emitting the entire log each time
     * tail - tails the stream of transactions, emitting only new transactions since the previous element
     * mix - calculates the mixer state and new transactions required to move funds through the mix
