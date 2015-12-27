@@ -1,4 +1,5 @@
 import http.HttpServer
+import jobcoin.JobcoinService
 import mixer._
 
 import scala.util.Success
@@ -11,24 +12,23 @@ object Main extends App
   bindingFuture.andThen { case Success(binding) =>
     val host = binding.localAddress.getHostName
     val port = binding.localAddress.getPort
-
-    // curl -H "Content-Type: application/json" --data '{ "out": [ "AliceOut1", "AliceOut2" ] }' http://localhost:8080/mixers
-    // url -H "Content-Type: application/json" --data '{ "fromAddress": "Alice"; "toAddress": "mixIn0"; "amount": "10" }' http://localhost:8080/api/transactions
-
     println(
       s"""
          | Get started with the following URLs:
-         | Stock Price Service:
-         |   Yahoo with default SMA        : http://$host:$port/stock/price/daily/yhoo
-         |   Yahoo 2 years w/ SMA(200)     : http://$host:$port/stock/price/daily/yhoo?period=2y&calculated=sma(200)
-         |   Facebook 1 year raw history   : http://$host:$port/stock/price/daily/fb?period=1y&raw=true
-         | Bitcoin Trades Service:
-         |   Hourly OHLCV (Bitstamp USD)   : http://$host:$port/bitcoin/price/hourly/bitstamp/USD
-         |   Daily  OHLCV (itBit USD)      : http://$host:$port/bitcoin/price/daily/itbit/USD
-         |   Recent trades (itBit USD)     : http://$host:$port/bitcoin/trades/itbit/USD
-         |   Trades raw response           : http://$host:$port/bitcoin/trades/bitstamp/USD?raw=true
-         | Bitcoin Random Trades Websocket Service:
-         |   Periodic random trades        : ws://$host:$port/bitcoin/random/trades
+         | Query the Jobcoin Service:
+         |   Transaction list    : http://$host:$port/jobcoin/transactions
+         |   Address list        : http://$host:$port/jobcoin/addresses
+         | Query the Mixer Service:
+         |   Mixer list          : http://$host:$port/mixers
+         |   Mixer state         : http://$host:$port/mixers/<mixer input address>
+         |               Example : http://$host:$port/mixers/mixIn0
+         |
+         | Create and fund a new mixer from the command line using curl:
+         | curl -H "Content-Type: application/json" --data '{ "out": [ "AliceOut1", "AliceOut2" ] }' http://$host:$port/mixers
+         | curl -H "Content-Type: application/json" --data '{ "fromAddress": "Alice", "toAddress": "mixIn0", "amount": "10" }' http://$host:$port/jobcoin/transactions
+         |
+         | Continue refreshing the following URL to observe balances change as the mixer runs
+         | http://$host:$port/mixers/mixIn0
       """.stripMargin.trim)
   }
 

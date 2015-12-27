@@ -1,4 +1,4 @@
-name := "bitcoin-mixer-sample"
+name := "jobcoin-mixer"
 
 organization := "com.lancearlaus"
 
@@ -19,7 +19,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit-experimental"     % "2.0-M2"   % "test"
 )
 
-homepage := Some(url("https://github.com/lancearlaus/bitcoin-mixer-sample"))
+homepage := Some(url("https://github.com/lancearlaus/jobcoin-mixer"))
 
 licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 

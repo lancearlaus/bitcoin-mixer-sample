@@ -2,12 +2,12 @@ package mixer
 
 import java.time.Instant
 
+import jobcoin.Jobcoin.Transaction
+import jobcoin.JobcoinService.JsonProtocol._
 import org.scalatest.{Matchers, WordSpec}
 import spray.json._
 
 class JsonProtocolSpec extends WordSpec with Matchers {
-
-  import JsonProtocol._
 
   "Protocol" should {
 
