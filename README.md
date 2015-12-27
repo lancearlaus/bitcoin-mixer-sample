@@ -10,7 +10,7 @@ This demo project uses Akka HTTP and related technologies to create an anonymizi
   sbt run
 ```
 
-which will produce the following instructions:
+which will start the server and produce the following helpful message:
 
 ```bash
 Get started with the following URLs:
