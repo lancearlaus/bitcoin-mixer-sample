@@ -33,11 +33,13 @@ Get started with the following URLs:
  curl -H "Content-Type: application/json" --data '{ "fromAddress": "Alice", "toAddress": "mixIn0", "amount": "10" }' http://localhost:8080/jobcoin/transactions
 ```
 
+
+
 ## Implementation Highlights
 
-* The mixer implementation is an event sourced inspired design, treating the Jobcoing transaction list as an append-only log over which
-   a set of aggregates are calculated to generate the current mix state and any necessary transactions
-* Each mixer instance is implemented using a materialized flow with the following structure
+* The mixer implementation is an event sourced inspired design, treating the Jobcoin transaction list as an append-only log over which a set of aggregates are calculated to generate the current mix state and any necessary transactions
+* A new mixer is created by posting a set of output addresses to the `/mixers` endpoint, as seen in the example curl command from the server startup message
+* Each mixer instance is implemented using an Akka Streams flow with the following structure
 
     ```scala
         transactions ~> tail ~> mix ~> unzip.in
