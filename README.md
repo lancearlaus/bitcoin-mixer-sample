@@ -11,12 +11,12 @@ This demo project uses Akka HTTP and related technologies to create an anonymizi
 ```
 
 which will
-# Start the server
-# Initial a set of sample accounts with the following Jobcoin balances
+- Start the server
+- Initial a set of sample accounts with the following Jobcoin balances
     * Alice: 1000
     * Bob: 2000
     * Charlie: 3000
-# Produce the following helpful message:
+- Produce the following helpful message:
 
 ```bash
 Get started with the following URLs:
