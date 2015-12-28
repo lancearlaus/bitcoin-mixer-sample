@@ -10,7 +10,13 @@ This demo project uses Akka HTTP and related technologies to create an anonymizi
   sbt run
 ```
 
-which will start the server and produce the following helpful message:
+which will
+# Start the server
+# Initial a set of sample accounts with the following Jobcoin balances
+    * Alice: 1000
+    * Bob: 2000
+    * Charlie: 3000
+# Produce the following helpful message:
 
 ```bash
 Get started with the following URLs:
